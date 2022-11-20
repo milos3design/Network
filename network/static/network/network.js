@@ -1,15 +1,42 @@
 document.addEventListener('DOMContentLoaded', function() {
 
     if (document.querySelector('#posts_view') != null) {
+
         const view_type = 'posts_view';
-        show_all_posts(tip=view_type); 
+        show_all_posts(tip=view_type);
+
+        if (document.querySelector('#compose-id') != null) {
+            document.querySelector('#compose-id').onsubmit = function() {
+
+                const user_username = JSON.parse(document.getElementById('user_username').textContent);
+                const text = document.querySelector('#compose-text').value;
+                console.log(user_username);
+                console.log(text);
+                // Send data to Django
+                fetch('compose', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        author: user_username,
+                        text: text
+                    })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    // Print result
+                    console.log('ok je');
+                    location.reload()
+                    
+                });
+                return false;
+            }
+        }
     }
     if (document.querySelector('#following_view') != null) {
         const view_type = 'following_view';
         following_posts(tip=view_type); 
     }
 
-
+    
 
 });
 
@@ -19,13 +46,14 @@ function compose_box() {
     // Get username of the logged in user
     // If user is not logged in, index.html posts_view returns "anonimno"
     const user_username = JSON.parse(document.getElementById('user_username').textContent);
-
+    
+    // If user is logged in, create compose box
     if (user_username != 'anonimno') {
-        const compose = document.createElement('div');
-        compose.className = 'form-group';
+        const compose = document.createElement('form');
+        compose.id = 'compose-id';
         compose.innerHTML = `
-        <textarea class="form-control mt-4 mb-1" placeholder="What's happening?" rows="2"></textarea>
-        <button type="submit" class="btn btn-primary mb-2" id="btn_post">Post</button>
+        <textarea class="form-control mt-4 mb-1" placeholder="What's happening?" rows="2" id="compose-text"></textarea>
+        <input type="submit" class="btn btn-primary mb-2" value="Post"/>
         `;
         document.querySelector('#compose_view').append(compose);
     }

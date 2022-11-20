@@ -10,6 +10,8 @@ urlpatterns = [
     path("register", views.register, name="register"),
     path("posts_view", views.posts_view, name="posts_view"),
 
+    # API return
     path("posts/<str:type>", views.posts, name="posts"),
+    path("compose", views.compose, name="compose")
     #path("/<str:profile>", views.profile, name="profile")
 ]
