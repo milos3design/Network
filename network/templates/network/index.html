@@ -1,0 +1,23 @@
+{% extends "network/layout.html" %}
+
+{% block body %}
+    <div id="main_box">
+        
+        <div id="compose_view">
+            {% if user.is_authenticated %}
+            {{ request.user.username|json_script:"user_username" }}
+            {% else %} 
+                {{ "anonimno"|json_script:"user_username"}}
+            {% endif %}
+        </div>
+        
+        <div id="posts_view">
+            {% if user.is_authenticated %}
+                {{ request.user.username|json_script:"user_username" }}
+            {% else %} 
+                {{ "anonimno"|json_script:"user_username"}}
+            {% endif %}
+        </div>
+
+    </div>
+{% endblock %}
