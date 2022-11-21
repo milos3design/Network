@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Send data to Django
                 fetch('compose', {
                     method: 'POST',
+                    headers: {'X-CSRFToken': document.getElementById('csrf').querySelector('input').value},
                     body: JSON.stringify({
                         author: user_username,
                         text: text
@@ -35,9 +36,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const view_type = 'following_view';
         following_posts(tip=view_type); 
     }
-
-    
-
 });
 
 
@@ -51,6 +49,8 @@ function compose_box() {
     if (user_username != 'anonimno') {
         const compose = document.createElement('form');
         compose.id = 'compose-id';
+        compose.name ='csrfToken';
+        compose.method = 'post';
         compose.innerHTML = `
         <textarea class="form-control mt-4 mb-1" placeholder="What's happening?" rows="2" id="compose-text"></textarea>
         <input type="submit" class="btn btn-primary mb-2" value="Post"/>

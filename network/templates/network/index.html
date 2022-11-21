@@ -4,6 +4,9 @@
     <div id="main_box">
         
         <div id="compose_view">
+            <div id="csrf">
+                {% csrf_token %}
+            </div>
             {% if user.is_authenticated %}
             {{ request.user.username|json_script:"user_username" }}
             {% else %} 

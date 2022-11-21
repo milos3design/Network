@@ -70,7 +70,6 @@ def posts_view(request):
     return render(request, "network/posts.html")
 
 
-@csrf_exempt
 @login_required
 def compose(request):
     # Composing a new post must be via POST
@@ -107,3 +106,7 @@ def posts(request, type):
     posts = posts.order_by("-timestamp").all()
     logged = request.user if request.user.is_authenticated else None
     return JsonResponse([post.serialize(logged=logged) for post in posts], safe=False)
+
+
+def profile(request, username):
+    pass
