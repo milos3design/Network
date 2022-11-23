@@ -2,3 +2,15 @@
     margin: auto;
     max-width: 900px;
 }
+
+.edit_box {
+    background-color: rgb(245, 245, 245);
+    width: 100%;
+    height: 100%;            
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 9;
+    margin: 0px;
+    padding: 10px;
+}

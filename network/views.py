@@ -52,6 +52,13 @@ def register(request):
                 "message": "Passwords must match."
             })
 
+        # Ensure that username "anonimno" can't be used, as it's used
+        # in templates for passing non regisetered user to js
+        if username == "anonimno":
+            return render(request, "network/register.html", {
+                "message": "Username can't be 'anonimno'."
+            })
+
         # Attempt to create new user
         try:
             user = User.objects.create_user(username, email, password)
@@ -79,6 +86,8 @@ def compose(request):
     data = json.loads(request.body)
     username = data.get("author", "")
     text = data.get("text", "")
+    if text == "":
+        return JsonResponse({"error": "You must type something."}, status=400)
     post = Post(
         author = User.objects.get(username=username),
         text = text
@@ -110,3 +119,24 @@ def posts(request, type):
 
 def profile(request, username):
     pass
+
+
+def edit(request):
+    # Composing a new post must be via POST
+    if request.method != "PUT":
+        return JsonResponse({"error": "PUT request required."}, status=400)
+
+    data = json.loads(request.body)
+    id = data.get("id", "")
+    username = data.get("username", "")
+    text = data.get("text", "")
+    print(text)
+    update_post = Post.objects.get(id=id)
+
+    if update_post.author.id != request.user.id:
+        return JsonResponse({"error": "Only author of the post can edit it."}, status=400)
+
+    update_post.text = text
+    update_post.save()
+
+    return JsonResponse({"message": "Success."}, status=201)
