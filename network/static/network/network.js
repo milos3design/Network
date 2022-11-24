@@ -1,13 +1,11 @@
 function compose_box() {
-
     // Get username of the logged in user
     // If user is not logged in, index.html posts_view returns "anonimno"
     const user_username = JSON.parse(document.getElementById('user_username').textContent);
-    
     // If user is logged in, create compose box
     if (user_username != 'anonimno') {
         const compose = document.createElement('form');
-        compose.id = 'compose-id';
+        compose.id = 'compose_id';
         compose.name ='csrfToken';
         compose.method = 'POST';
         compose.innerHTML = `
@@ -20,11 +18,7 @@ function compose_box() {
 
 
 function load_posts(type, id_view) {
-
-    // Get username of the logged in user
-    // If user is not logged in, index.html posts_view returns "anonimno"
     const user_username = JSON.parse(document.getElementById('user_username').textContent);
-
     // GET the emails from the backend
     fetch(`/posts/${type}`)
     .then(response => response.json())
@@ -42,7 +36,7 @@ function load_posts(type, id_view) {
             <div class="card bg-light mt-3">
             <div class="card-header">
             <div class="row">
-            <div class="col-8"><strong>${spost.author}</strong></div>`;
+            <div class="col-8"><a href="http://localhost:8000/profile/${spost.author}"><strong>${spost.author}</strong></a></div>`;
 
             // If logged in user is the author, add edit button
             if (spost.author == user_username) {
@@ -91,6 +85,16 @@ function following_posts() {
 }
 
 
+function profile_posts() {
+    const profile_username = JSON.parse(document.getElementById('profile_username').textContent);
+    const user_username = JSON.parse(document.getElementById('user_username').textContent);
+    if (profile_username === user_username) {
+        compose_box();
+    }
+    load_posts(profile_username, id_view);
+}
+
+
 function edit_post(id, username, text) {
     console.log(id, username, text);
     
@@ -121,6 +125,7 @@ function edit_post(id, username, text) {
             container.parentNode.removeChild(container);
         }
     });
+    // Fetch data using the PUT method
     if (document.querySelector('#edit-id') != null) { 
         document.querySelector('#edit-id').onsubmit = function() {
             const edit_text = document.querySelector('#edit-text').value;
@@ -134,8 +139,10 @@ function edit_post(id, username, text) {
             })
             .then(response => response.json())
             .then(result => {
-                // Reload page
-                location.reload()
+                // Print message
+                console.log(result);
+                // Don't reload whole page, only update current post with the text
+                document.getElementById(`post_id_${id}`).innerHTML = `${edit_text}`;
             });
             return false;
         }
@@ -143,36 +150,50 @@ function edit_post(id, username, text) {
 }
 
 
+function compose_box_fetch() {
+    const user_username = JSON.parse(document.getElementById('user_username').textContent);
+    document.querySelector('#compose_id').onsubmit = function() {
+        const text = document.querySelector('#compose-text').value;
+        // Send data to backend using POST method - create new post
+        fetch('compose', {
+            method: 'POST',
+            headers: {'X-CSRFToken': document.getElementById('csrf').querySelector('input').value},
+            body: JSON.stringify({
+                author: user_username,
+                text: text
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            // Reload page
+            location.reload()
+        });
+        return false;
+    }
+}
+
+
 document.addEventListener('DOMContentLoaded', function() {
 
     if (document.querySelector('#posts_view') != null) {
-
+        // If div with the posts_view exists, call function to show all posts
         show_all_posts(id_view='posts_view');
-
-        if (document.querySelector('#compose-id') != null) { 
-            document.querySelector('#compose-id').onsubmit = function() {
-                const user_username = JSON.parse(document.getElementById('user_username').textContent);
-                const text = document.querySelector('#compose-text').value;
-                // Send data to Django
-                fetch('compose', {
-                    method: 'POST',
-                    headers: {'X-CSRFToken': document.getElementById('csrf').querySelector('input').value},
-                    body: JSON.stringify({
-                        author: user_username,
-                        text: text
-                    })
-                })
-                .then(response => response.json())
-                .then(result => {
-                    // Reload page
-                    location.reload()
-                });
-                return false;
-            }
-        }
     }
+
+
     //When you click "Following" link, call following posts function
     if (document.querySelector('#following_view') != null) {
         following_posts(id_view='following_view'); 
+    }
+
+    // If profile_view div exists, call function to show profile page elements
+    if (document.querySelector('#profile_view') != null) { 
+        //profile_stats(id_view='profile_view')
+        profile_posts(id_view='profile_view')
+    }
+
+    // If compose_id div exists, call function to show compose box
+    if (document.querySelector('#compose_id') != null) { 
+        compose_box_fetch()
     }
 });

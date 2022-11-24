@@ -72,9 +72,16 @@ def register(request):
     else:
         return render(request, "network/register.html")
 
-# View posts for following link and profile pages
-def posts_view(request):
-    return render(request, "network/posts.html")
+
+# View posts for following link
+def following(request):
+    return render(request, "network/following.html")
+
+
+# View posts for following link
+def profile(request, username):
+    # https://adamj.eu/tech/2020/02/18/safely-including-data-for-javascript-in-a-django-template/
+    return render(request, "network/profile.html", context={"profile_username": username})
 
 
 @login_required
@@ -107,8 +114,9 @@ def posts(request, type):
         else:
             return JsonResponse({"error": "You must be logged in."}, status=400)
     else:
-        if type in User.objects.username:
-            Post.objects.filter(author=request.user)
+        if User.objects.filter(username=type).exists():
+            profile_username_id = User.objects.get(username=type)
+            posts = Post.objects.filter(author=profile_username_id)
         else:
             return JsonResponse({"error": "Invalid profile."}, status=400)
     
@@ -116,9 +124,6 @@ def posts(request, type):
     logged = request.user if request.user.is_authenticated else None
     return JsonResponse([post.serialize(logged=logged) for post in posts], safe=False)
 
-
-def profile(request, username):
-    pass
 
 
 def edit(request):
