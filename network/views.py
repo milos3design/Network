@@ -125,7 +125,6 @@ def posts(request, type):
     return JsonResponse([post.serialize(logged=logged) for post in posts], safe=False)
 
 
-
 def edit(request):
     # Composing a new post must be via POST
     if request.method != "PUT":
@@ -133,9 +132,7 @@ def edit(request):
 
     data = json.loads(request.body)
     id = data.get("id", "")
-    username = data.get("username", "")
     text = data.get("text", "")
-    print(text)
     update_post = Post.objects.get(id=id)
 
     if update_post.author.id != request.user.id:
