@@ -1,24 +1,27 @@
 {% extends "network/layout.html" %}
 
 {% block body %}
+
+            {% if user.is_authenticated %}
+                {{ request.user.username|json_script:"user_username" }}
+            {% else %} 
+                {{ "anonimno"|json_script:"user_username"}}
+            {% endif %}
+
     <div id="main_box">
+        <div id="profile_stats">
+        </div>
         <div id="compose_view">
             <div id="csrf">
                 {% csrf_token %}
             </div>
-            {% if user.is_authenticated %}
-            {{ request.user.username|json_script:"user_username" }}
-            {% else %} 
-                {{ "anonimno"|json_script:"user_username"}}
-            {% endif %}
         </div>
         <div id="profile_view">
-            {% if user.is_authenticated %}
-                {{ request.user.username|json_script:"user_username" }}
-            {% else %} 
-                {{ "anonimno"|json_script:"user_username" }}
-            {% endif %}
             {{ profile_username|json_script:"profile_username" }}
+            {{ able_to_follow|json_script:"able_to_follow" }}
+            {{ following_number|json_script:"following_number" }}
+            {{ followers_number|json_script:"followers_number" }}
+
         </div>
     </div>
 {% endblock %}

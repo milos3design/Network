@@ -3,7 +3,7 @@ from django.db import models
 
 
 class User(AbstractUser):
-    following = models.ManyToManyField("self", blank = True)
+    following = models.ManyToManyField("self", related_name="followed_by", blank = True, symmetrical=False)
 
     def __str__(self):
         return f"Id: {self.id} User: {self.username}"

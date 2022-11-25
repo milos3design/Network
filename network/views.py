@@ -80,8 +80,27 @@ def following(request):
 
 # View posts for following link
 def profile(request, username):
+
+    profile_user = User.objects.get(username=username)
+    logged_user = User.objects.get(username=request.user.username)
+
+    # Follow or Unfollow logic
+    # First check if it's profile page of the logged in user and then check if
+    # profile user is in the following list of the logged in user
+    if (profile_user == logged_user) or (profile_user in logged_user.following.filter(username=profile_user.username)):
+        able_to_follow = False
+    else:
+        able_to_follow = True
+
     # https://adamj.eu/tech/2020/02/18/safely-including-data-for-javascript-in-a-django-template/
-    return render(request, "network/profile.html", context={"profile_username": username})
+    return render(request, "network/profile.html", context={
+        "profile_username": username,
+        "able_to_follow": able_to_follow,
+        # http://www.learningaboutelectronics.com/Articles/How-to-count-the-number-of-objects-in-a-ManyToManyField-in-Django.php
+        "following_number": profile_user.following.all().count(),
+        # https://docs.djangoproject.com/en/1.10/ref/models/fields/#django.db.models.ManyToManyField.symmetrical
+        "followers_number": profile_user.followed_by.all().count(),
+        })
 
 
 @login_required

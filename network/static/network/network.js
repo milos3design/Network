@@ -19,60 +19,6 @@ function compose_box() {
 }
 
 
-function edit_post(id, text) {
-    
-    // Create a new box for editing the post
-    const edit_box = document.createElement('div');
-    edit_box.className = 'edit_box';
-    edit_box.id = `edit_id_${id}`;
-    document.querySelector(`#post_id_${id}`).append(edit_box)
-
-    // Create a form inside the box
-    const edit_input = document.createElement('form');
-    edit_input.id = 'edit_id';
-    edit_input.name ='csrfToken';
-    edit_input.method = 'PUT';
-    edit_input.innerHTML = `
-    <textarea class="form-control mt-4 mb-1" rows="2" id="edit_text">${text}</textarea>
-    <input type="submit" class="btn btn-primary mb-2" value="Post"/>
-    <button class="btn btn-light mb-2" id="cancel">Cancel</button>
-    `;
-    document.querySelector(`#edit_id_${id}`).append(edit_input);
-
-    // When the edit box is created, listen for clicks
-    // Clicking outside of the edit box or the cancel button, removes the edit box
-    document.addEventListener('mouseup', function(e) {
-        var container = document.getElementById(`edit_id_${id}`);
-        const cancel = document.querySelector('#cancel');
-        if (container && (!container.contains(e.target) || cancel.contains(e.target))) {
-            container.parentNode.removeChild(container);
-        }
-    });
-    // Fetch data using the PUT method
-    if (document.querySelector('#edit_id') != null) { 
-        document.querySelector('#edit_id').onsubmit = function() {
-            const edit_text = document.querySelector('#edit_text').value;
-            fetch('edit', {
-                method: 'PUT',
-                headers: {'X-CSRFToken': document.getElementById('csrf').querySelector('input').value},
-                    body: JSON.stringify({
-                        id: id,
-                        text: edit_text
-                    })
-            })
-            .then(response => response.json())
-            .then(result => {
-                // Print message
-                console.log(result);
-                // Don't reload whole page, only update current post with the text
-                document.getElementById(`post_id_${id}`).innerHTML = `${edit_text}`;
-            });
-            return false;
-        }
-    }
-}
-
-
 function load_posts(type, id_view) {
     
     const user_username = JSON.parse(document.getElementById('user_username').textContent);
@@ -132,13 +78,103 @@ function load_posts(type, id_view) {
 }
 
 
+function edit_post(id, text) {
+    
+    // Create a new box for editing the post
+    const edit_box = document.createElement('div');
+    edit_box.className = 'edit_box';
+    edit_box.id = `edit_id_${id}`;
+    document.querySelector(`#post_id_${id}`).append(edit_box)
+
+    // Create a form inside the box
+    const edit_input = document.createElement('form');
+    edit_input.id = 'edit_id';
+    edit_input.name ='csrfToken';
+    edit_input.method = 'PUT';
+    edit_input.innerHTML = `
+    <textarea class="form-control mt-4 mb-1" rows="2" id="edit_text">${text}</textarea>
+    <input type="submit" class="btn btn-primary mb-2" value="Post"/>
+    <button class="btn btn-light mb-2" id="cancel">Cancel</button>
+    `;
+    document.querySelector(`#edit_id_${id}`).append(edit_input);
+
+    // When the edit box is created, listen for clicks
+    // Clicking outside of the edit box or the cancel button, removes the edit box
+    document.addEventListener('mouseup', function(e) {
+        var container = document.getElementById(`edit_id_${id}`);
+        const cancel = document.querySelector('#cancel');
+        if (container && (!container.contains(e.target) || cancel.contains(e.target))) {
+            container.parentNode.removeChild(container);
+        }
+    });
+    // Fetch data using the PUT method
+    if (document.querySelector('#edit_id') != null) { 
+        document.querySelector('#edit_id').onsubmit = function() {
+            const edit_text = document.querySelector('#edit_text').value;
+            fetch('/edit', {
+                method: 'PUT',
+                headers: {'X-CSRFToken': document.getElementById('csrf').querySelector('input').value},
+                    body: JSON.stringify({
+                        id: id,
+                        text: edit_text
+                    })
+            })
+            .then(response => response.json())
+            .then(result => {
+                // Print message
+                console.log(result);
+                // Don't reload whole page, only update current post with the text
+                document.getElementById(`post_id_${id}`).innerHTML = `${edit_text}`;
+            });
+            return false;
+        }
+    }
+}
+
+
+function show_all_posts() {
+    compose_box();
+    load_posts('all', id_view);
+}
+
+
 function profile_posts() {
     const profile_username = JSON.parse(document.getElementById('profile_username').textContent);
+    const able_to_follow = JSON.parse(document.getElementById('able_to_follow').textContent);
+    const following_number = JSON.parse(document.getElementById('following_number').textContent);
+    const followers_number = JSON.parse(document.getElementById('followers_number').textContent);
+
     const user_username = JSON.parse(document.getElementById('user_username').textContent);
-    //if (profile_username === user_username) {
-    //    compose_box();
-    //}
+
+    const profile = document.createElement('div');
+    profile.className = 'card mt-4 p-2';
+    profile.innerHTML = `
+        <div class="row">
+            <div class="col-4">
+                <h3 class="p-4">${profile_username.toUpperCase()}</h3>
+                <p>${able_to_follow}</p>
+                </div>
+            <div class="col-4">
+                <h6 class="pt-4">Following</h6>
+                <p>${following_number}</p>
+            </div>
+            <div class="col-4">
+                <h6 class="pt-4">Followers</h6>
+                <p>${followers_number}</p>
+            </div>
+        </div>
+        `;
+        document.querySelector('#profile_stats').append(profile);
+
+    if (profile_username === user_username) {
+        compose_box();
+    }
     load_posts(profile_username, id_view);
+}
+
+
+function following_posts() {
+    load_posts('following', id_view);
 }
 
 
@@ -147,7 +183,7 @@ function compose_box_fetch() {
     document.querySelector('#compose_id').onsubmit = function() {
         const text = document.querySelector('#compose-text').value;
         // Send data to backend using POST method - create new post
-        fetch('compose', {
+        fetch('/compose', {
             method: 'POST',
             headers: {'X-CSRFToken': document.getElementById('csrf').querySelector('input').value},
             body: JSON.stringify({
@@ -162,17 +198,6 @@ function compose_box_fetch() {
         });
         return false;
     }
-}
-
-
-function show_all_posts() {
-    compose_box();
-    load_posts('all', id_view);
-}
-
-
-function following_posts() {
-    load_posts('following', id_view);
 }
 
 
