@@ -87,10 +87,12 @@ def profile(request, username):
     # Follow or Unfollow logic
     # First check if it's profile page of the logged in user and then check if
     # profile user is in the following list of the logged in user
-    if (profile_user == logged_user) or (profile_user in logged_user.following.filter(username=profile_user.username)):
-        able_to_follow = False
+    if profile_user == logged_user:
+        able_to_follow = "unabled"
+    elif profile_user in logged_user.following.filter(username=profile_user.username):
+        able_to_follow = "no"
     else:
-        able_to_follow = True
+        able_to_follow = "yes"
 
     # https://adamj.eu/tech/2020/02/18/safely-including-data-for-javascript-in-a-django-template/
     return render(request, "network/profile.html", context={
@@ -159,5 +161,31 @@ def edit(request):
 
     update_post.text = text
     update_post.save()
+
+    return JsonResponse({"message": "Success."}, status=201)
+
+
+def follow(request):
+    # Composing a new post must be via POST
+    if request.method != "PUT":
+        return JsonResponse({"error": "PUT request required."}, status=400)
+
+    data = json.loads(request.body)
+    user_username = data.get("user_username", "")
+    profile_username = data.get("profile_username", "")
+    logged_user = User.objects.get(username=user_username)
+    follow_user = User.objects.get(username=profile_username)
+
+    if logged_user.id != request.user.id:
+        return JsonResponse({"error": "You must be logged in."}, status=400)
+
+    if logged_user.id == follow_user.id:
+        return JsonResponse({"error": "You can't follow yourself"}, status=400)
+
+    if logged_user in User.objects.filter(following=follow_user):
+        logged_user.following.remove(follow_user)
+    else:
+        logged_user.following.add(follow_user)
+    
 
     return JsonResponse({"message": "Success."}, status=201)

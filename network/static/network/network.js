@@ -139,6 +139,7 @@ function show_all_posts() {
 
 
 function profile_posts() {
+    // Get all data from backend
     const profile_username = JSON.parse(document.getElementById('profile_username').textContent);
     const able_to_follow = JSON.parse(document.getElementById('able_to_follow').textContent);
     const following_number = JSON.parse(document.getElementById('following_number').textContent);
@@ -148,12 +149,25 @@ function profile_posts() {
 
     const profile = document.createElement('div');
     profile.className = 'card mt-4 p-2';
-    profile.innerHTML = `
+    let partHTML = `
         <div class="row">
             <div class="col-4">
-                <h3 class="p-4">${profile_username.toUpperCase()}</h3>
-                <p>${able_to_follow}</p>
-                </div>
+                <h3 class="pt-4 pl-4">${profile_username.toUpperCase()}</h3>`;
+
+    // Follow or Unfollow
+    if (able_to_follow === "yes") {
+        partHTML += `
+            <button class="btn btn-primary btn-sm ml-4" id="btn_follow">Follow</button>
+        `;
+    } else if (able_to_follow === "no") {
+        partHTML += `
+            <button class="btn btn-primary btn-sm ml-4" id="btn_follow">Unfollow</button>
+        `;
+    } else {
+        partHTML += ``;
+    }
+    partHTML += `
+            </div>
             <div class="col-4">
                 <h6 class="pt-4">Following</h6>
                 <p>${following_number}</p>
@@ -164,7 +178,31 @@ function profile_posts() {
             </div>
         </div>
         `;
-        document.querySelector('#profile_stats').append(profile);
+    profile.innerHTML = partHTML
+    document.querySelector('#profile_stats').append(profile);
+
+    // Fetch data using the PUT method
+    if (document.querySelector('#btn_follow') != null) { 
+        document.querySelector('#btn_follow').onclick = function() {
+            console.log('click');
+            fetch('/follow', {
+                method: 'PUT',
+                headers: {'X-CSRFToken': document.getElementById('csrf').querySelector('input').value},
+                    body: JSON.stringify({
+                        user_username: user_username,
+                        profile_username: profile_username
+                    })
+            })
+            .then(response => response.json())
+            .then(result => {
+                // Print message
+                console.log(result);
+                // Reload page
+                location.reload()
+            });
+            return false;
+        }
+    }
 
     if (profile_username === user_username) {
         compose_box();
@@ -175,6 +213,8 @@ function profile_posts() {
 
 function following_posts() {
     load_posts('following', id_view);
+
+
 }
 
 
