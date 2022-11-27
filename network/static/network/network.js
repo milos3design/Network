@@ -37,7 +37,7 @@ function load_posts(type, id_view) {
             element.id = `post_box_id_${spost.id}`;
             // Make divs out of post data
             let partHTML = `
-            <div class="card bg-light mt-3">
+            <div class="card bg-light mb-3">
             <div class="card-header">
             <div class="row">
             <div class="col-8"><a href="http://localhost:8000/profile/${spost.author}"><strong>${spost.author}</strong></a></div>`;
@@ -53,10 +53,34 @@ function load_posts(type, id_view) {
                 partHTML += '';
             }
             partHTML += `
-            </div>
+                </div>
             </div>
             <div class="card-body" id="post_id_${spost.id}">${spost.text}</div>
-            <div class="card-footer">${spost.likers.length}</div>
+                <div class="card-footer">
+                    <div class="row ml-1">`;
+
+            // Like - Unlike functionality
+            if (spost.likers.includes(user_username)) {
+                let post_liked = true;
+                partHTML += `
+                    <div class="col-6 row">
+                        <button class="border-0" id="like" value=${spost.id}>
+                            <div id="h_${spost.id}">❤️</div>
+                        </button>`;
+            } else {
+                let post_liked = false;
+                partHTML += `
+                    <div class="col-6 row">
+                        <button class="border-0" id="like" value=${spost.id}>
+                            <div id="h_${spost.id}">🤍</div>
+                        </button>`;
+            }
+            partHTML += `
+                    <div id="l_${spost.id}">${spost.likers.length}</div>
+                        </div>
+                        <small class="col-6 text-right">${spost.timestamp}</small>
+                    </div>
+                </div>
             </div>`;
 
             // Append constructed HTML to 'posts_view' div in HTML file
@@ -69,11 +93,24 @@ function load_posts(type, id_view) {
         document.querySelectorAll('#btn_edit').forEach(btn => {
             btn.addEventListener('click', function() {
                 // Get the post text from the id of the post
-                post_text  = document.querySelector(`#post_id_${this.value}`).innerHTML;
                 // Call function using all arguments needed
                 edit_post(this.value, post_text);
             });
         }); 
+
+        // Listen for "like" button click. On click, get
+        // the id of the post (this.value) and likers list
+        if (user_username != 'anonimno') {
+            document.querySelectorAll('#like').forEach(like => {
+                like.addEventListener('click', function() {
+                    // Call function using id and heart
+                    heart = document.getElementById(`h_${this.value}`).innerHTML;
+                    likes_no = document.getElementById(`l_${this.value}`).innerHTML;
+                    like_post(this.value, heart, likes_no);
+    
+                });
+            }); 
+        } 
     });
 }
 
@@ -129,6 +166,36 @@ function edit_post(id, text) {
             return false;
         }
     }
+}
+
+
+function like_post(id, heart) {
+    fetch('/like', {
+        method: 'PUT',
+        headers: {'X-CSRFToken': document.getElementById('csrf').querySelector('input').value},
+            body: JSON.stringify({
+                id: id,
+                heart: heart
+            })
+    })
+    .then(response => response.json())
+    .then(result => {
+        // Print message
+        console.log(result);
+        // Don't reload whole page, only update heart icon and number of likes
+        likes_no = parseInt(document.getElementById(`l_${id}`).innerHTML);
+        if (heart === '🤍') {
+            likes_no += 1;
+            document.getElementById(`h_${id}`).innerHTML = '❤️';
+            document.getElementById(`l_${id}`).innerHTML = likes_no;
+        } else if (heart === '❤️') {
+            likes_no -= 1;
+            document.getElementById(`h_${id}`).innerHTML = '🤍';
+            document.getElementById(`l_${id}`).innerHTML = likes_no;
+        } else {
+            location.reload();
+        }
+    });
 }
 
 

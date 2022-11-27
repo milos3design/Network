@@ -13,7 +13,7 @@ class Post(models.Model):
     author = models.ForeignKey("User", on_delete=models.CASCADE, related_name="authors")
     text = models.TextField(max_length=512, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    likers = models.ManyToManyField("User", blank=True, related_name="liked")
+    likers = models.ManyToManyField("User", blank=True, related_name="liked_by", symmetrical=False)
 
     def __str__(self):
         return f"Id: {self.id} by {self.author.username} on {self.timestamp}"
@@ -24,5 +24,5 @@ class Post(models.Model):
             "author": self.author.username,
             "text": self.text,
             "timestamp": self.timestamp.strftime("%b %d %Y, %I:%M %p"),
-            "likers": [author.username for author in self.likers.all()]
+            "likers": [User.username for User in self.likers.all()]
         }

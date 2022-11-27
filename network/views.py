@@ -5,7 +5,6 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
-from django.views.decorators.csrf import csrf_exempt
 
 from .models import User, Post
 
@@ -187,5 +186,24 @@ def follow(request):
     else:
         logged_user.following.add(follow_user)
     
+    return JsonResponse({"message": "Success."}, status=201)
+
+
+def like(request):
+    # Composing a new post must be via POST
+    if request.method != "PUT":
+        return JsonResponse({"error": "PUT request required."}, status=400)
+
+    data = json.loads(request.body)
+    id = data.get("id", "")
+    
+    like_post = Post.objects.get(id=id)
+
+    liked_post_likers = like_post.likers.all()
+
+    if request.user in liked_post_likers:
+        like_post.likers.remove(request.user)
+    else:
+        like_post.likers.add(request.user)
 
     return JsonResponse({"message": "Success."}, status=201)
