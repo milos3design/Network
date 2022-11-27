@@ -19,24 +19,26 @@ function compose_box() {
 }
 
 
-function load_posts(type, id_view) {
+function load_posts(type, id_view, page_no) { 
     
     const user_username = JSON.parse(document.getElementById('user_username').textContent);
-    
+    console.log(`ovo je pogled: ${id_view}`);
+    console.log(`ovo je broj strane: ${page_no}`);
     // GET the emails from the backend
-    fetch(`/posts/${type}`)
+    fetch(`/posts/${type}/${page_no}`)
     .then(response => response.json())
-    .then(posts => {
+    .then(payload => {
         // Print posts
-        console.log(posts);
-
+        console.log('ovo su podaci:');
+        console.log(payload.data);
         // Show all posts
-        posts.forEach(spost => {
-            const element = document.createElement('div');
+        payload.data.forEach(spost => {
+            let partHTML ='';
+            var element = document.createElement('div');
             element.style.position = 'relative';
             element.id = `post_box_id_${spost.id}`;
             // Make divs out of post data
-            let partHTML = `
+            partHTML = `
             <div class="card bg-light mb-3">
             <div class="card-header">
             <div class="row">
@@ -61,14 +63,12 @@ function load_posts(type, id_view) {
 
             // Like - Unlike functionality
             if (spost.likers.includes(user_username)) {
-                let post_liked = true;
                 partHTML += `
                     <div class="col-6 row">
                         <button class="border-0" id="like" value=${spost.id}>
                             <div id="h_${spost.id}">❤️</div>
                         </button>`;
             } else {
-                let post_liked = false;
                 partHTML += `
                     <div class="col-6 row">
                         <button class="border-0" id="like" value=${spost.id}>
@@ -88,11 +88,58 @@ function load_posts(type, id_view) {
             document.querySelector(`#${id_view}`).append(element);
         });
 
+        console.log(payload.page);
+        // Paginate navigation
+        // Create pagination div element
+        const paginate_nav = document.createElement('div');
+        paginate_nav.className = 'text-center';
+        paginationHTML = '<ul class="pagination">';
+        if (payload.page.has_previous) {
+            paginationHTML += `
+            <li class="page-item" id="page_id" value="${parseInt(payload.page.current)-1}">
+                <a class="page-link" href="#">&laquo;</a>
+            </li>
+            `;
+        }
+        paginationHTML += `
+        <li class="current page-item">
+            <a class="page-link">Page ${payload.page.current} of ${payload.page.total_pages}</a>
+        </li>
+        `;
+        if (payload.page.has_next) {
+            paginationHTML += `
+            <li class="page-item" id="page_id" value="${parseInt(payload.page.current)+1}">
+                <a class="page-link" href="#">&raquo;</a>
+            </li>
+            `;
+        }
+        paginate_nav.innerHTML = paginationHTML;
+        document.querySelector(`#${id_view}`).append(paginate_nav);
+
+        // Listen for "pagination" buttons click. On click, get
+        // the page id (this.value)
+        document.querySelectorAll('#page_id').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Get the post text from the id of the post
+                // Call function using all arguments needed
+                console.log(this.value);
+                var box = document.getElementById(`${id_view}`);
+                box.parentNode.removeChild(box);
+                const make_new_box = document.createElement('div');
+                make_new_box.id = id_view;
+                document.querySelector(`#main_box`).append(make_new_box);
+                page_no = this.value;
+                load_posts(type, id_view, page_no)
+              
+            });
+        });
+
         // Listen for "edit" button click. On click, get
         // the id of the post (this.value) and text from that post
         document.querySelectorAll('#btn_edit').forEach(btn => {
             btn.addEventListener('click', function() {
                 // Get the post text from the id of the post
+                post_text = document.querySelector(`#post_id_${this.value}`).innerHTML;
                 // Call function using all arguments needed
                 edit_post(this.value, post_text);
             });
@@ -199,13 +246,17 @@ function like_post(id, heart) {
 }
 
 
-function show_all_posts() {
+function show_all_posts(id_view, page_no) {
     compose_box();
-    load_posts('all', id_view);
-}
+    if (page_no == undefined) {
+        load_posts('all', id_view, 1);
+    } else {
+        load_posts('all', id_view, page_no);
+    }
+    }
 
 
-function profile_posts() {
+function profile_posts(id_view, page_no) {
     // Get all data from backend
     const profile_username = JSON.parse(document.getElementById('profile_username').textContent);
     const able_to_follow = JSON.parse(document.getElementById('able_to_follow').textContent);
@@ -274,13 +325,21 @@ function profile_posts() {
     if (profile_username === user_username) {
         compose_box();
     }
-    load_posts(profile_username, id_view);
+    if (page_no == undefined) {
+        load_posts(profile_username, id_view, 1);
+    } else {
+        load_posts(profile_username, id_view, page_no);
+    }
 }
 
 
-function following_posts() {
-    load_posts('following', id_view);
+function following_posts(id_view, page_no) {
 
+    if (page_no == undefined) {
+        load_posts('following', id_view, 1);
+    } else {
+        load_posts('following', id_view, page_no);
+    }
 
 }
 

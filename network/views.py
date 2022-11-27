@@ -5,6 +5,8 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
+from django.core.paginator import Paginator
+
 
 from .models import User, Post
 
@@ -124,7 +126,7 @@ def compose(request):
 
 
 # Return JSON with posts - posts API route
-def posts(request, type):
+def posts(request, type, page_no):
     if type == "all":
         posts = Post.objects.all()
     elif type == "following":
@@ -141,8 +143,24 @@ def posts(request, type):
             return JsonResponse({"error": "Invalid profile."}, status=400)
     
     posts = posts.order_by("-timestamp").all()
+    paginator = Paginator(posts, 10)
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_no)
+    page_obj.number = page_no
     logged = request.user if request.user.is_authenticated else None
-    return JsonResponse([post.serialize(logged=logged) for post in posts], safe=False)
+    data = [page_obj.serialize(logged=logged) for page_obj in page_obj]
+    # https://realpython.com/django-pagination/#pagination-in-django-templates
+    payload = {
+        "page": {
+            "current": page_obj.number,
+            "has_next": page_obj.has_next(),
+            "has_previous": page_obj.has_previous(),
+            "total_pages": page_obj.paginator.num_pages
+        },
+        "data": data
+    }
+    return JsonResponse(payload)
 
 
 def edit(request):
