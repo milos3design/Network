@@ -57,7 +57,7 @@ def register(request):
         # in templates for passing non regisetered user to js
         if username == "anonimno":
             return render(request, "network/register.html", {
-                "message": "Username can't be 'anonimno'."
+                "message": "Invalid username."
             })
 
         # Attempt to create new user
@@ -79,7 +79,7 @@ def following(request):
     return render(request, "network/following.html")
 
 
-# View posts for following link
+# View profile
 def profile(request, username):
 
     profile_user = User.objects.get(username=username)
@@ -136,6 +136,7 @@ def posts(request, type, page_no):
         else:
             return JsonResponse({"error": "You must be logged in."}, status=400)
     else:
+        # Return profile posts
         if User.objects.filter(username=type).exists():
             profile_username_id = User.objects.get(username=type)
             posts = Post.objects.filter(author=profile_username_id)
@@ -143,14 +144,13 @@ def posts(request, type, page_no):
             return JsonResponse({"error": "Invalid profile."}, status=400)
     
     posts = posts.order_by("-timestamp").all()
+    
     paginator = Paginator(posts, 10)
-
-    page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_no)
     page_obj.number = page_no
     logged = request.user if request.user.is_authenticated else None
     data = [page_obj.serialize(logged=logged) for page_obj in page_obj]
-    # https://realpython.com/django-pagination/#pagination-in-django-templates
+    # https://realpython.com/django-pagination/#responding-with-paginated-data
     payload = {
         "page": {
             "current": page_obj.number,
@@ -164,7 +164,7 @@ def posts(request, type, page_no):
 
 
 def edit(request):
-    # Composing a new post must be via POST
+    # Editing a post must be via PUT request method
     if request.method != "PUT":
         return JsonResponse({"error": "PUT request required."}, status=400)
 
@@ -183,7 +183,7 @@ def edit(request):
 
 
 def follow(request):
-    # Composing a new post must be via POST
+    # Changing User following field post must be via POST
     if request.method != "PUT":
         return JsonResponse({"error": "PUT request required."}, status=400)
 
@@ -193,12 +193,15 @@ def follow(request):
     logged_user = User.objects.get(username=user_username)
     follow_user = User.objects.get(username=profile_username)
 
+    # Prevent editing if not logged in
     if logged_user.id != request.user.id:
         return JsonResponse({"error": "You must be logged in."}, status=400)
 
+    # Prevent users from following themselves
     if logged_user.id == follow_user.id:
         return JsonResponse({"error": "You can't follow yourself"}, status=400)
 
+    # Follow / Unfollow
     if logged_user in User.objects.filter(following=follow_user):
         logged_user.following.remove(follow_user)
     else:
@@ -208,17 +211,15 @@ def follow(request):
 
 
 def like(request):
-    # Composing a new post must be via POST
+    # Editing post field must be via PUT request method
     if request.method != "PUT":
         return JsonResponse({"error": "PUT request required."}, status=400)
 
     data = json.loads(request.body)
     id = data.get("id", "")
-    
     like_post = Post.objects.get(id=id)
-
     liked_post_likers = like_post.likers.all()
-
+    # Like / Unlike
     if request.user in liked_post_likers:
         like_post.likers.remove(request.user)
     else:
